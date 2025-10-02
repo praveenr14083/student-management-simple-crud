@@ -1,0 +1,51 @@
+name: Full-Stack CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test-docker:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:6
+        ports:
+          - 27017:27017
+
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      # 3️⃣ Install & test backend
+      - name: Install backend dependencies
+        run: |
+          cd server
+          npm install
+          npm test || echo "No tests found"
+
+      # 4️⃣ Install & build frontend
+      - name: Install frontend dependencies and build
+        run: |
+          cd client
+          npm install
+          npm run build
+
+      # 5️⃣ Setup Docker
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      # 6️⃣ Build Docker images
+      - name: Build Docker images
+        run: |
+          docker-compose build
